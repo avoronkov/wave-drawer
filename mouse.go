@@ -31,5 +31,6 @@ func (d *draggedCanvasObject) DragEnd() {
 
 func (d *draggedCanvasObject) CreateRenderer() fyne.WidgetRenderer {
 	log.Printf("CreateRenderer(): %v", d.CanvasObject.Size())
+	d.CanvasObject.Move(fyne.NewPos(0.0, 0.0))
 	return widget.NewSimpleRenderer(d.CanvasObject)
 }

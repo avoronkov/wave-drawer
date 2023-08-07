@@ -7,6 +7,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 )
 
 func main() {
@@ -23,6 +26,20 @@ func main() {
 	red := color.RGBA{128, 0, 0, 255}
 	black := color.RGBA{0, 0, 0, 255}
 
+	toolbar := widget.NewToolbar(
+		widget.NewToolbarAction(theme.DocumentCreateIcon(), func() {
+			log.Println("New document")
+		}),
+		widget.NewToolbarSeparator(),
+		widget.NewToolbarAction(theme.ContentCutIcon(), func() {}),
+		widget.NewToolbarAction(theme.ContentCopyIcon(), func() {}),
+		widget.NewToolbarAction(theme.ContentPasteIcon(), func() {}),
+		widget.NewToolbarSpacer(),
+		widget.NewToolbarAction(theme.HelpIcon(), func() {
+			log.Println("Display help")
+		}),
+	)
+
 	raster := canvas.NewRasterWithPixels(
 		func(x, y, w, h int) color.Color {
 			v := white
@@ -38,21 +55,27 @@ func main() {
 			return v
 		})
 
-	log.Printf("ScaleMode: %v", raster.ScaleMode)
+	log.Printf("raster.Position: %v", raster.Position())
 
 	draggableRaster := MakeDraggableCanvasObject(raster, func(obj fyne.CanvasObject, e *fyne.DragEvent) {
-		log.Printf("OnDragged: pos=%v, abs=%v, size=%v, (%v)", e.Position, e.AbsolutePosition, obj.Size(), e.Dragged)
-		p := e.Position
+		// log.Printf("OnDragged: pos=%v, abs=%v, size=%v, (%v)", e.Position, e.AbsolutePosition, obj.Size(), e.Dragged)
+		p := e.Position.SubtractXY(obj.Position().X, obj.Position().Y)
+
 		grid.Set(int(p.Y*scale), int(p.X*scale), true)
 		obj.Refresh()
 	})
-	useDraggable := true
 
+	var r fyne.CanvasObject = raster
+	useDraggable := true
 	if useDraggable {
-		w.SetContent(draggableRaster)
-	} else {
-		w.SetContent(raster)
+		r = draggableRaster
 	}
+
+	content := container.NewBorder(toolbar, nil, nil, nil, r)
+
+	log.Printf("r.Position: %v", r.Position())
+
+	w.SetContent(content)
 	w.Resize(fyne.NewSize(120, 100))
 	w.ShowAndRun()
 }
