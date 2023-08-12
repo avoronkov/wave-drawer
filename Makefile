@@ -1,14 +1,14 @@
 .PHONY: all build install clean
 
-all: install
+all: android
 
-build:
+build-android:
 	fyne package -os android/arm64 -icon coding.png -name fyneOnTermux -release -appID example.example.example
 
-build-linux:
+linux:
 	env PKG_CONFIG_PATH=/usr/lib/pkgconfig go build .
 
-install: build
+android: build-android
 	cp -fT ./fyneOnTermux.apk ~/storage/downloads/fyneOnTermux.apk
 
 clean:

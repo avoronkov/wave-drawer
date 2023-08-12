@@ -88,7 +88,7 @@ func (g *Grid) GetState(y, x int) PState {
 		return PMainLine
 	}
 
-	if x%100 == 0 || (y-g.middle)%100 == 0 {
+	if (x%100 == 0 && y%4 == 0) || ((y-g.middle)%100 == 0 && x%4 == 0) {
 		return PLine
 	}
 	return PEmpty
@@ -118,6 +118,41 @@ func (g *Grid) Normalize() {
 			}
 		}
 	}
+
+	// Trim left tail
+	for x := 0; x < g.w; x++ {
+		y, ok := g.getPoint(x)
+		if !ok {
+			continue
+		}
+		if y > g.middle {
+			g.cleanColumn(x)
+		} else {
+			break
+		}
+	}
+
+	// Trim right tail
+	for x := g.w - 1; x >= 0; x-- {
+		y, ok := g.getPoint(x)
+		if !ok {
+			continue
+		}
+		if y < g.middle {
+			g.cleanColumn(x)
+		} else {
+			break
+		}
+	}
+}
+
+func (g *Grid) getPoint(x int) (y int, ok bool) {
+	for y := 0; y < g.h; y++ {
+		if g.data[y][x] {
+			return y, true
+		}
+	}
+	return 0, false
 }
 
 func (g *Grid) cleanColumn(x int) {

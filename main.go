@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 
@@ -53,6 +54,7 @@ func main() {
 			log.Println("Display help")
 		}),
 	)
+	status := widget.NewLabel("OK")
 
 	draggableRaster := NewInteractiveRaster(raster)
 	draggableRaster.OnDragged = func(obj fyne.CanvasObject, e *fyne.DragEvent) {
@@ -60,14 +62,24 @@ func main() {
 		start := e.Position.Subtract(e.Dragged)
 		x2, y2 := draggableRaster.LocationForPosition(fin)
 		x1, y1 := draggableRaster.LocationForPosition(start)
-		log.Printf("OnDragged %v, delta=%v : %v, %v -> %v, %v", e.Position, e.Dragged, x1, y1, x2, y2)
+		// log.Printf("OnDragged %v, delta=%v : %v, %v -> %v, %v", e.Position, e.Dragged, x1, y1, x2, y2)
 		grid.SetRange(y1, x1, y2, x2, true)
 		obj.Refresh()
 	}
 	draggableRaster.OnLayout = func(size fyne.Size) {
+		var w, h int
+		defer func() {
+			if r := recover(); r != nil {
+				status.SetText(fmt.Sprintf("FATAL size=%v Resize(%v, %v): %v", size, h, w, r))
+			}
+		}()
 		pos := fyne.NewPos(size.Width, size.Height)
-		w, h := draggableRaster.LocationForPosition(pos)
+		w, h = draggableRaster.LocationForPosition(pos)
+		if h < 0 || w < 0 {
+			return
+		}
 		grid.Resize(h, w)
+		status.SetText(fmt.Sprintf("Resized: w=%v, h=%v", w, h))
 	}
 
 	var r fyne.CanvasObject = raster
@@ -76,7 +88,7 @@ func main() {
 		r = draggableRaster
 	}
 
-	content := container.NewBorder(toolbar, nil, nil, nil, r)
+	content := container.NewBorder(toolbar, status, nil, nil, r)
 
 	log.Printf("r.Position: %v", r.Position())
 
