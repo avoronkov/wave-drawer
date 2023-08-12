@@ -2,7 +2,6 @@ package main
 
 import (
 	"image/color"
-	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -17,6 +16,7 @@ type interactiveRaster struct {
 	img *canvas.Raster
 
 	OnDragged func(obj fyne.CanvasObject, e *fyne.DragEvent)
+	OnLayout  func(size fyne.Size)
 }
 
 var _ fyne.Draggable = (*interactiveRaster)(nil)
@@ -30,7 +30,6 @@ func NewInteractiveRaster(raster *canvas.Raster) *interactiveRaster {
 }
 
 func (r *interactiveRaster) SetMinSize(size fyne.Size) {
-	log.Printf("SetMinSize %v", size)
 	pixWidth, _ := r.LocationForPosition(fyne.NewPos(size.Width, size.Height))
 	scale := float32(1.0)
 	c := fyne.CurrentApp().Driver().CanvasForObject(r.img)
@@ -86,6 +85,10 @@ func bgPattern(x, y, _, _ int) color.Color {
 func (r *rasterWidgetRender) Layout(size fyne.Size) {
 	r.bg.Resize(size)
 	r.raster.img.Resize(size)
+
+	if r.raster.OnLayout != nil {
+		r.raster.OnLayout(size)
+	}
 }
 
 func (r *rasterWidgetRender) MinSize() fyne.Size {
