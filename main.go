@@ -18,9 +18,6 @@ func main() {
 
 	grid := NewGrid(3200, 3200)
 
-	scale := float32(1000.0 / 840.0)
-	log.Printf("Scale=%v", scale)
-
 	white := color.RGBA{255, 255, 255, 255}
 	blue := color.RGBA{0, 0, 128, 255}
 	red := color.RGBA{128, 0, 0, 255}
@@ -55,15 +52,13 @@ func main() {
 			return v
 		})
 
-	log.Printf("raster.Position: %v", raster.Position())
-
-	draggableRaster := MakeDraggableCanvasObject(raster, func(obj fyne.CanvasObject, e *fyne.DragEvent) {
-		// log.Printf("OnDragged: pos=%v, abs=%v, size=%v, (%v)", e.Position, e.AbsolutePosition, obj.Size(), e.Dragged)
-		p := e.Position.SubtractXY(obj.Position().X, obj.Position().Y)
-
-		grid.Set(int(p.Y*scale), int(p.X*scale), true)
+	draggableRaster := NewInteractiveRaster(raster)
+	draggableRaster.OnDragged = func(obj fyne.CanvasObject, e *fyne.DragEvent) {
+		x, y := draggableRaster.LocationForPosition(e.Position)
+		// log.Printf("OnDragged %v -> %v, %v", e.Position, x, y)
+		grid.Set(y, x, true)
 		obj.Refresh()
-	})
+	}
 
 	var r fyne.CanvasObject = raster
 	useDraggable := true

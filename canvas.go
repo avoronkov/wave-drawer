@@ -1,145 +1,118 @@
 package main
 
 import (
-	"fmt"
 	"image/color"
 	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/driver/desktop"
-	"fyne.io/fyne/v2/driver/mobile"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
-type Canvas struct {
-	raster *canvas.Raster
+type interactiveRaster struct {
+	widget.BaseWidget
 
-	texter SetTexter
+	min fyne.Size
+	img *canvas.Raster
+
+	OnDragged func(obj fyne.CanvasObject, e *fyne.DragEvent)
 }
 
-var _ fyne.CanvasObject = (*Canvas)(nil)
-var _ desktop.Hoverable = (*Canvas)(nil)
-var _ fyne.Draggable = (*Canvas)(nil)
+var _ fyne.Draggable = (*interactiveRaster)(nil)
 
-func NewCanvas(texter SetTexter) *Canvas {
-	c := &Canvas{
-		texter: texter,
+func NewInteractiveRaster(raster *canvas.Raster) *interactiveRaster {
+	r := &interactiveRaster{
+		img: raster,
 	}
-	c.raster = canvas.NewRasterWithPixels(c.render)
-	return c
+	r.ExtendBaseWidget(r)
+	return r
 }
 
-func (c *Canvas) render(x, y, w, h int) color.Color {
-	log.Printf("Render: %v, %v, %v, %v", x, y, w, h)
-	// blue := color.RGBA{B: 128, A: 0xff}
-	white := color.RGBA{R: 128, G: 128, B: 128, A: 255}
-	// center := int(h / 2)
-	col := white
-	/*
-		if y == center {
-			col = blue
-		}
-	*/
-	return col
+func (r *interactiveRaster) SetMinSize(size fyne.Size) {
+	log.Printf("SetMinSize %v", size)
+	pixWidth, _ := r.LocationForPosition(fyne.NewPos(size.Width, size.Height))
+	scale := float32(1.0)
+	c := fyne.CurrentApp().Driver().CanvasForObject(r.img)
+	if c != nil {
+		scale = c.Scale()
+	}
+
+	texScale := float32(pixWidth) / size.Width / scale
+	size = fyne.NewSize(size.Width/texScale, size.Height/texScale)
+	r.min = size
+	r.Resize(size)
 }
 
-func (c *Canvas) MouseDown(e *desktop.MouseEvent) {
-	c.texter.SetText(fmt.Sprintf("MouseDown: %v", e.Position))
+func (r *interactiveRaster) MinSize() fyne.Size {
+	return r.min
 }
 
-func (c *Canvas) MouseIn(e *desktop.MouseEvent) {
-	c.texter.SetText(fmt.Sprintf("MouseIn: %v", e.Position))
+func (r *interactiveRaster) CreateRenderer() fyne.WidgetRenderer {
+	return &rasterWidgetRender{raster: r, bg: canvas.NewRasterWithPixels(bgPattern)}
 }
 
-func (c *Canvas) MouseMoved(e *desktop.MouseEvent) {
-	c.texter.SetText(fmt.Sprintf("MouseMoved: %v", e.Position))
+func (r *interactiveRaster) Tapped(ev *fyne.PointEvent) {
 }
 
-func (c *Canvas) MouseOut() {
-
+func (r *interactiveRaster) TappedSecondary(*fyne.PointEvent) {
 }
 
-func (c *Canvas) TouchDown(e *mobile.TouchEvent) {
+func (r *interactiveRaster) LocationForPosition(pos fyne.Position) (int, int) {
+	c := fyne.CurrentApp().Driver().CanvasForObject(r.img)
+	x, y := int(pos.X), int(pos.Y)
+	if c != nil {
+		x, y = c.PixelCoordinateForPosition(pos)
+	}
 
-	c.texter.SetText(fmt.Sprintf("TouchDown: %v", e.Position))
+	return x, y
 }
 
-func (c *Canvas) Dragged(e *fyne.DragEvent) {
-	c.texter.SetText(fmt.Sprintf("Dragged: %v, %v", e.Position, e.Dragged))
+type rasterWidgetRender struct {
+	raster *interactiveRaster
+	bg     *canvas.Raster
 }
 
-func (c *Canvas) DragEnd() {
-	c.texter.SetText("DragEnd")
+func bgPattern(x, y, _, _ int) color.Color {
+	const boxSize = 25
+
+	if (x/boxSize)%2 == (y/boxSize)%2 {
+		return color.Gray{Y: 58}
+	}
+
+	return color.Gray{Y: 84}
 }
 
-type SetTexter interface {
-	SetText(s string)
+func (r *rasterWidgetRender) Layout(size fyne.Size) {
+	r.bg.Resize(size)
+	r.raster.img.Resize(size)
 }
 
-// fyne.CanvasObject implementation
-func (c *Canvas) Hide() {
-	c.raster.Hide()
+func (r *rasterWidgetRender) MinSize() fyne.Size {
+	return r.MinSize()
 }
 
-func (c *Canvas) MinSize() fyne.Size {
-	return c.raster.MinSize()
+func (r *rasterWidgetRender) Refresh() {
+	canvas.Refresh(r.raster)
 }
 
-func (c *Canvas) Move(pos fyne.Position) {
-	c.raster.Move(pos)
+func (r *rasterWidgetRender) BackgroundColor() color.Color {
+	return theme.BackgroundColor()
 }
 
-func (c *Canvas) Position() fyne.Position {
-	return c.raster.Position()
+func (r *rasterWidgetRender) Objects() []fyne.CanvasObject {
+	return []fyne.CanvasObject{r.bg, r.raster.img}
 }
 
-func (c *Canvas) Refresh() {
-	c.raster.Refresh()
+func (r *rasterWidgetRender) Destroy() {
 }
 
-func (c *Canvas) Resize(size fyne.Size) {
-	c.raster.Resize(size)
+func (r *interactiveRaster) Dragged(e *fyne.DragEvent) {
+	if r.OnDragged != nil {
+		r.OnDragged(r, e)
+	}
 }
 
-func (c *Canvas) Show() {
-	c.raster.Show()
-}
+func (r *interactiveRaster) DragEnd() {
 
-func (c *Canvas) Size() fyne.Size {
-	return c.raster.Size()
-}
-
-func (c *Canvas) Visible() bool {
-	return c.raster.Visible()
-}
-
-func (c *Canvas) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(c.raster)
-}
-
-type canvasRenderer struct {
-	canvas *Canvas
-}
-
-var _ fyne.WidgetRenderer = (*canvasRenderer)(nil)
-
-func (r *canvasRenderer) Layout(size fyne.Size) {
-	r.canvas.raster.Resize(size)
-}
-
-func (r *canvasRenderer) Destroy() {
-}
-
-func (r *canvasRenderer) Objects() []fyne.CanvasObject {
-	rect := canvas.NewRectangle(color.White)
-	return []fyne.CanvasObject{rect}
-}
-
-func (r *canvasRenderer) MinSize() fyne.Size {
-	return r.canvas.MinSize()
-}
-
-func (r *canvasRenderer) Refresh() {
-	r.canvas.raster.Refresh()
 }
