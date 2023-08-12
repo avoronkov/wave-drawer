@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"io"
+)
+
 type Grid struct {
 	data   [][]bool
 	w, h   int
@@ -143,6 +148,25 @@ func (g *Grid) Normalize() {
 		} else {
 			break
 		}
+	}
+}
+
+func (g *Grid) Save(out io.Writer) {
+	startX := 0
+	startXSet := false
+	for x := 0; x < g.w; x++ {
+		y, ok := g.getPoint(x)
+		if !ok {
+			continue
+		}
+		if !startXSet {
+			startXSet = true
+			startX = x
+		}
+
+		vx := x - startX
+		vy := g.middle - y
+		fmt.Fprintf(out, "%v %v\n", vx, vy)
 	}
 }
 

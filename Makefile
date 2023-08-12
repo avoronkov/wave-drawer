@@ -1,6 +1,11 @@
 .PHONY: all build install clean
 
-all: android
+all:
+	@if [ "`uname -o`" = "Android" ]; then \
+		make android; \
+	else \
+		make linux; \
+	fi
 
 build-android:
 	fyne package -os android/arm64 -icon coding.png -name fyneOnTermux -release -appID example.example.example

@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -39,8 +40,15 @@ func main() {
 	)
 
 	toolbar := widget.NewToolbar(
-		widget.NewToolbarAction(theme.DocumentCreateIcon(), func() {
-			log.Println("New document")
+		widget.NewToolbarAction(theme.DocumentSaveIcon(), func() {
+			grid.Normalize()
+			raster.Refresh()
+
+			d := dialog.NewFileSave(func(out fyne.URIWriteCloser, err error) {
+				defer out.Close()
+				grid.Save(out)
+			}, w)
+			d.Show()
 		}),
 		widget.NewToolbarSeparator(),
 		widget.NewToolbarAction(theme.ViewRefreshIcon(), func() {
