@@ -42,6 +42,44 @@ func (g *Grid) Set(y, x int, val bool) {
 	}
 }
 
+// Simple Bresenham implementation.
+func (g *Grid) SetRange(y1, x1, y2, x2 int, val bool) {
+	xMin, yMin, xMax, yMax := x1, y1, x2, y2
+	if xMax == xMin {
+		if abs(yMax) > abs(yMin) {
+			g.Set(yMax, xMax, val)
+		} else {
+			g.Set(yMin, xMin, val)
+		}
+		return
+	}
+	if xMax < xMin {
+		xMin, yMin, xMax, yMax = x2, y2, x1, y1
+	}
+
+	m_new := 2 * (yMax - yMin)
+	ydiff := 1
+	if m_new < 0 {
+		ydiff = -1
+		m_new = -m_new
+	}
+	// int slope_error_new = m_new - (x2 - x1);
+	slope_error_new := 0
+	for x, y := xMin, yMin; x <= xMax; x++ {
+		g.Set(y, x, val)
+
+		// Add slope to increment angle formed
+		slope_error_new += m_new
+
+		// Slope error reached limit, time to
+		// increment y and update slope error.
+		for slope_error_new > 0 {
+			y += ydiff
+			slope_error_new -= 2 * (x2 - x1)
+		}
+	}
+}
+
 func (g *Grid) GetState(y, x int) PState {
 	if g.Get(y, x) {
 		return PPoint
@@ -86,4 +124,11 @@ func (g *Grid) cleanColumn(x int) {
 	for y := 0; y < g.h; y++ {
 		g.data[y][x] = false
 	}
+}
+
+func abs(a int) int {
+	if a >= 0 {
+		return a
+	}
+	return -a
 }

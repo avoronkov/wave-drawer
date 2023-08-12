@@ -56,9 +56,12 @@ func main() {
 
 	draggableRaster := NewInteractiveRaster(raster)
 	draggableRaster.OnDragged = func(obj fyne.CanvasObject, e *fyne.DragEvent) {
-		x, y := draggableRaster.LocationForPosition(e.Position)
-		// log.Printf("OnDragged %v -> %v, %v", e.Position, x, y)
-		grid.Set(y, x, true)
+		fin := e.Position
+		start := e.Position.Subtract(e.Dragged)
+		x2, y2 := draggableRaster.LocationForPosition(fin)
+		x1, y1 := draggableRaster.LocationForPosition(start)
+		log.Printf("OnDragged %v, delta=%v : %v, %v -> %v, %v", e.Position, e.Dragged, x1, y1, x2, y2)
+		grid.SetRange(y1, x1, y2, x2, true)
 		obj.Refresh()
 	}
 	draggableRaster.OnLayout = func(size fyne.Size) {
