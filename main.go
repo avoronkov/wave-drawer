@@ -39,12 +39,20 @@ func main() {
 		},
 	)
 
+	grid.OnUpdate = raster.Refresh
+
 	toolbar := widget.NewToolbar(
+		widget.NewToolbarAction(theme.DocumentCreateIcon(), func() {
+			grid.Clear()
+			raster.Refresh()
+		}),
 		widget.NewToolbarAction(theme.DocumentSaveIcon(), func() {
 			grid.Normalize()
-			raster.Refresh()
 
 			d := dialog.NewFileSave(func(out fyne.URIWriteCloser, err error) {
+				if out == nil || err != nil {
+					return
+				}
 				defer out.Close()
 				grid.Save(out)
 			}, w)
@@ -53,9 +61,7 @@ func main() {
 		widget.NewToolbarSeparator(),
 		widget.NewToolbarAction(theme.ViewRefreshIcon(), func() {
 			grid.Normalize()
-			raster.Refresh()
 		}),
-		widget.NewToolbarAction(theme.ContentCopyIcon(), func() {}),
 		widget.NewToolbarAction(theme.ContentPasteIcon(), func() {}),
 		widget.NewToolbarSpacer(),
 		widget.NewToolbarAction(theme.HelpIcon(), func() {
@@ -96,7 +102,13 @@ func main() {
 		r = draggableRaster
 	}
 
-	content := container.NewBorder(toolbar, status, nil, nil, r)
+	piano, err := NewPiano(grid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	pianoBar := NewPianoBar(piano)
+
+	content := container.NewBorder(toolbar, status, nil, pianoBar, r)
 
 	log.Printf("r.Position: %v", r.Position())
 

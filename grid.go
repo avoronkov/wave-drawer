@@ -9,6 +9,8 @@ type Grid struct {
 	data   [][]bool
 	w, h   int
 	middle int
+
+	OnUpdate func()
 }
 
 func NewGrid(h, w int) *Grid {
@@ -34,6 +36,15 @@ func (g *Grid) Resize(h, w int) {
 	g.middle = g.h / 2
 }
 
+func (g *Grid) Clear() {
+	defer g.onUpdate()
+	for y := 0; y < g.h; y++ {
+		for x := 0; x < g.w; x++ {
+			g.data[y][x] = false
+		}
+	}
+}
+
 func (g *Grid) Get(y, x int) bool {
 	if y >= 0 && y < g.h && x >= 0 && x < g.w {
 		return g.data[y][x]
@@ -42,6 +53,13 @@ func (g *Grid) Get(y, x int) bool {
 }
 
 func (g *Grid) Set(y, x int, val bool) {
+	defer g.OnUpdate()
+	if y >= 0 && y < g.h && x >= 0 && x < g.w {
+		g.data[y][x] = val
+	}
+}
+
+func (g *Grid) set(y, x int, val bool) {
 	if y >= 0 && y < g.h && x >= 0 && x < g.w {
 		g.data[y][x] = val
 	}
@@ -49,6 +67,7 @@ func (g *Grid) Set(y, x int, val bool) {
 
 // Simple Bresenham implementation.
 func (g *Grid) SetRange(y1, x1, y2, x2 int, val bool) {
+	defer g.onUpdate()
 	xMin, yMin, xMax, yMax := x1, y1, x2, y2
 	if xMax == xMin {
 		if abs(yMax) > abs(yMin) {
@@ -68,10 +87,10 @@ func (g *Grid) SetRange(y1, x1, y2, x2 int, val bool) {
 		ydiff = -1
 		m_new = -m_new
 	}
-	// int slope_error_new = m_new - (x2 - x1);
+
 	slope_error_new := 0
 	for x, y := xMin, yMin; x <= xMax; x++ {
-		g.Set(y, x, val)
+		g.set(y, x, val)
 
 		// Add slope to increment angle formed
 		slope_error_new += m_new
@@ -80,7 +99,7 @@ func (g *Grid) SetRange(y1, x1, y2, x2 int, val bool) {
 		// increment y and update slope error.
 		for slope_error_new > 0 {
 			y += ydiff
-			slope_error_new -= 2 * (x2 - x1)
+			slope_error_new -= 2 * (xMax - xMin)
 		}
 	}
 }
@@ -100,6 +119,7 @@ func (g *Grid) GetState(y, x int) PState {
 }
 
 func (g *Grid) Normalize() {
+	defer g.onUpdate()
 	for x := 0; x < g.w; x++ {
 		// upper point
 		upperPoint := false
@@ -182,6 +202,12 @@ func (g *Grid) getPoint(x int) (y int, ok bool) {
 func (g *Grid) cleanColumn(x int) {
 	for y := 0; y < g.h; y++ {
 		g.data[y][x] = false
+	}
+}
+
+func (g *Grid) onUpdate() {
+	if g.OnUpdate != nil {
+		g.OnUpdate()
 	}
 }
 

@@ -2,10 +2,16 @@ module fyne-example
 
 go 1.20
 
-require fyne.io/fyne/v2 v2.3.5
+require (
+	fyne.io/fyne/v2 v2.3.5
+	github.com/avoronkov/waver v1.1.0
+	github.com/hajimehoshi/oto/v2 v2.0.2
+	github.com/matryer/is v1.4.1
+)
 
 require (
 	fyne.io/systray v1.10.1-0.20230602210930-b6a2d6ca2a7b // indirect
+	github.com/cryptix/wav v0.0.0-20180415113528-8bdace674401 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v0.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
