@@ -3,20 +3,18 @@ package main
 import (
 	"fmt"
 	"image/color"
-	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
 func main() {
 	myApp := app.New()
-	w := myApp.NewWindow("Raster")
+	w := myApp.NewWindow("Bezzier")
 
 	grid := NewGrid(0, 0)
 
@@ -44,41 +42,21 @@ func main() {
 	toolbar := widget.NewToolbar(
 		widget.NewToolbarAction(theme.DocumentCreateIcon(), func() {
 			grid.Clear()
-			raster.Refresh()
 		}),
-		widget.NewToolbarAction(theme.DocumentSaveIcon(), func() {
-			grid.Normalize()
-
-			d := dialog.NewFileSave(func(out fyne.URIWriteCloser, err error) {
-				if out == nil || err != nil {
-					return
-				}
-				defer out.Close()
-				grid.Save(out)
-			}, w)
-			d.Show()
-		}),
-		widget.NewToolbarSeparator(),
 		widget.NewToolbarAction(theme.ViewRefreshIcon(), func() {
-			grid.Normalize()
+			grid.Bezier()
 		}),
-		widget.NewToolbarAction(theme.ContentPasteIcon(), func() {}),
-		widget.NewToolbarSpacer(),
-		widget.NewToolbarAction(theme.HelpIcon(), func() {
-			log.Println("Display help")
+		widget.NewToolbarAction(theme.ViewRestoreIcon(), func() {
+			grid.Lagrange()
 		}),
 	)
 	status := widget.NewLabel("OK")
 
 	draggableRaster := NewInteractiveRaster(raster)
-	draggableRaster.OnDragged = func(obj fyne.CanvasObject, e *fyne.DragEvent) {
-		fin := e.Position
-		start := e.Position.Subtract(e.Dragged)
-		x2, y2 := draggableRaster.LocationForPosition(fin)
-		x1, y1 := draggableRaster.LocationForPosition(start)
-		// log.Printf("OnDragged %v, delta=%v : %v, %v -> %v, %v", e.Position, e.Dragged, x1, y1, x2, y2)
-		grid.SetRange(y1, x1, y2, x2, true)
-		obj.Refresh()
+	draggableRaster.OnDown = func(e fyne.PointEvent) {
+		pos := e.Position
+		x1, y1 := draggableRaster.LocationForPosition(pos)
+		grid.Set(y1, x1, true)
 	}
 	draggableRaster.OnLayout = func(size fyne.Size) {
 		var w, h int
@@ -102,15 +80,7 @@ func main() {
 		r = draggableRaster
 	}
 
-	piano, err := NewPiano(grid)
-	if err != nil {
-		log.Fatal(err)
-	}
-	pianoBar := NewPianoBar(piano)
-
-	content := container.NewBorder(toolbar, status, nil, pianoBar, r)
-
-	log.Printf("r.Position: %v", r.Position())
+	content := container.NewBorder(toolbar, status, nil, nil, r)
 
 	w.SetContent(content)
 	w.Resize(fyne.NewSize(120, 100))

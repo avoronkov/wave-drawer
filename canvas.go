@@ -5,6 +5,8 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/driver/mobile"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -17,9 +19,12 @@ type interactiveRaster struct {
 
 	OnDragged func(obj fyne.CanvasObject, e *fyne.DragEvent)
 	OnLayout  func(size fyne.Size)
+	OnDown    func(point fyne.PointEvent)
 }
 
 var _ fyne.Draggable = (*interactiveRaster)(nil)
+var _ mobile.Touchable = (*interactiveRaster)(nil)
+var _ desktop.Mouseable = (*interactiveRaster)(nil)
 
 func NewInteractiveRaster(raster *canvas.Raster) *interactiveRaster {
 	r := &interactiveRaster{
@@ -117,5 +122,29 @@ func (r *interactiveRaster) Dragged(e *fyne.DragEvent) {
 }
 
 func (r *interactiveRaster) DragEnd() {
+
+}
+
+func (r *interactiveRaster) TouchDown(e *mobile.TouchEvent) {
+	if r.OnDown != nil {
+		r.OnDown(e.PointEvent)
+	}
+}
+
+func (r *interactiveRaster) TouchUp(e *mobile.TouchEvent) {
+
+}
+
+func (r *interactiveRaster) TouchCancel(e *mobile.TouchEvent) {
+
+}
+
+func (r *interactiveRaster) MouseDown(e *desktop.MouseEvent) {
+	if r.OnDown != nil {
+		r.OnDown(e.PointEvent)
+	}
+}
+
+func (r *interactiveRaster) MouseUp(e *desktop.MouseEvent) {
 
 }

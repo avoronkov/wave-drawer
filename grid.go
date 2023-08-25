@@ -10,6 +10,8 @@ type Grid struct {
 	w, h   int
 	middle int
 
+	bezierDone bool
+
 	OnUpdate func()
 }
 
@@ -38,6 +40,7 @@ func (g *Grid) Resize(h, w int) {
 
 func (g *Grid) Clear() {
 	defer g.onUpdate()
+	g.bezierDone = false
 	for y := 0; y < g.h; y++ {
 		for x := 0; x < g.w; x++ {
 			g.data[y][x] = false
@@ -169,6 +172,45 @@ func (g *Grid) Normalize() {
 			break
 		}
 	}
+}
+
+func (g *Grid) Bezier() {
+	if g.bezierDone {
+		return
+	}
+	defer g.onUpdate()
+	points := g.points()
+
+	for t := 0.0; t <= 1.0; t += 0.001 {
+		p := Bezzier(points, t)
+		g.set(int(p.Y+0.5), int(p.X+0.5), true)
+	}
+	g.bezierDone = true
+}
+
+func (g *Grid) Lagrange() {
+	if g.bezierDone {
+		return
+	}
+	defer g.onUpdate()
+	points := g.points()
+	lg := NewLagrange(points)
+	for x := 0; x < g.w; x++ {
+		y := lg.Value(float64(x))
+		g.set(int(y+0.5), x, true)
+	}
+	g.bezierDone = true
+}
+
+func (g *Grid) points() (points []Point) {
+	for x := 0; x < g.w; x++ {
+		y, ok := g.getPoint(x)
+		if !ok {
+			continue
+		}
+		points = append(points, Point{float64(x), float64(y)})
+	}
+	return
 }
 
 func (g *Grid) Save(out io.Writer) {
