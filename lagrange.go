@@ -18,7 +18,7 @@ func (l *Lagrange) ljx(j int, x float64) float64 {
 		}
 		res *= (x - p.X) / (l.Points[j].X - p.X)
 	}
-	return 1.0
+	return res
 }
 
 func (l *Lagrange) Value(x float64) (value float64) {
