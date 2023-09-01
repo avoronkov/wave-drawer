@@ -58,7 +58,7 @@ func (p *Piano) Play(octave int, note string) {
 		log.Printf("Failed to create Wave: %v", err)
 		return
 	}
-	data, done := p.player.PlayContext(wave, waves.NewNoteCtx(n.Freq, 0.8, 4.0, 0.0))
+	data, done := p.player.PlayContext(wave, waves.NewNoteCtx(n.Freq, 0.33, 4.0, 0.0))
 	pl := p.context.NewPlayer(data)
 	pl.Play()
 	<-done
